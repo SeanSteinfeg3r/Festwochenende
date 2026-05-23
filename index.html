@@ -18,13 +18,9 @@
     table { width: 100%; border-collapse: collapse; background: white; margin-top: 8px; min-width:520px;}
     th, td { border: 1px solid #ccc; padding: 8px 5px; text-align: center; vertical-align: top; }
     th { background-color: #eee; }
-    input[type="text"], input[type="password"], input[type="number"], input[type="color"] {
-      padding: 10px; border: 1px solid #ccc; border-radius: 5px; font-size:1em; width:100%; box-sizing:border-box;
-    }
+    input[type="text"] { padding: 10px; border: 1px solid #ccc; border-radius: 5px; font-size:1em; width:100%; box-sizing:border-box; }
     .helfer-list { list-style: none; margin: 0; padding: 0; text-align: left; }
     .helfer-list li { padding: 2px 4px; }
-    .admin-section { margin-top: 20px; background: #eef; padding: 14px; border-radius: 9px; max-width:700px; margin-left:auto; margin-right:auto;}
-    .debug-block { background:#fffbe6; margin:10px 0; padding:12px; border-radius:8px; font-size:14px; display:none; overflow:auto; white-space:pre-wrap; word-wrap:break-word;}
     
     #verantwortlicheBox { display:none; position:fixed; z-index:999; left:0; top:0; width:100vw; height:100vh; background:rgba(0,0,0,0.23);}
     #verantwortlicheInhalt { background:#fff; max-width:95vw; margin:8vw auto 0 auto; padding:18px 5vw 14px 5vw; border-radius:18px; box-shadow:0 8px 24px rgba(0,0,0,0.21); border:3px solid #22bb33; position:relative; }
@@ -61,36 +57,6 @@
 
   <div id="schichtplan"></div>
 
-  <div style="margin-top: 18px; text-align: center;">
-    <button onclick="zeigeLogin()">🔑 Admin-Login</button>
-    <div id="loginFeld" style="display: none; margin-top: 9px;">
-      <input id="adminPasswort" type="password" placeholder="Passwort" style="max-width:200px;">
-      <button onclick="adminLogin()">Einloggen</button>
-    </div>
-  </div>
-
-  <div id="adminBereich" class="admin-section" style="display: none;">
-    <h2>Admin-Bereich</h2>
-    <div style="margin-bottom:10px;">
-      <input id="aufgabe" placeholder="Neue Aufgabe" style="width:160px; margin-right:5px;">
-      <input id="farbe" type="color" value="#ffffcc" style="width:40px; margin-right:5px;">
-      <button onclick="aufgabeHinzufuegen()">Aufgabe hinzufügen</button>
-    </div>
-    <div style="margin-bottom:10px;">
-      <input id="zeit" placeholder="Neue Zeit (z.B. 08:00-12:00)" style="width:210px; margin-right:5px;">
-      <button onclick="zeitHinzufuegen()">Zeit hinzufügen</button>
-      <button onclick="zeitLoeschen()">Letzte Zeit löschen</button>
-    </div>
-    <div style="margin-bottom:10px;">
-      <input id="maxZeit" placeholder="Zeit">
-      <input id="maxAufgabe" placeholder="Aufgabe">
-      <input id="max" type="number" placeholder="Max. Helfer">
-      <button onclick="maxHinzufuegen()">Limit setzen</button>
-    </div>
-    <button onclick="loeschen()" style="background:#dc3545;">Letzte Aufgabe löschen</button>
-    <div id="debug-block" class="debug-block"></div>
-  </div>
-
   <div id="verantwortlicheBox" onclick="if(event.target===this)verantwortlicheSchliessen()">
     <div id="verantwortlicheInhalt">
       <button id="verantwortlicheClose" onclick="verantwortlicheSchliessen()">&times;</button>
@@ -109,112 +75,109 @@
   </div>
 
   <script>
-    // ========== BASEROW Konfiguration (AKTUALISIERT) ==========
-    const BASEROW_API_TOKEN = "SvWXJIjz6eyKd1Z7REyRpCtnuCqJYPrQ"; 
-    const BASEROW_SERVER_URL = "https://api.baserow.io";
-    const EINTRAEGE_TABLE_ID = 991494; // Deine neue ID für Einträge
-    const KONFIG_TABLE_ID    = 991493; // Deine neue ID für Konfig
-    // ==========================================================
+    const BASEROW_API_TOKEN = "SvWXJIjz6eyKd1Z7REyRpCtnuCqJYPrQ"; [cite: 45]
+    const BASEROW_SERVER_URL = "https://api.baserow.io"; [cite: 45]
+    const EINTRAEGE_TABLE_ID = 991494;
+    const KONFIG_TABLE_ID    = 991493;
 
-    let admin = false;
-    let aktuellerTag = 'Aufbau';
-    let isLoadingData = false;
+    let aktuellerTag = 'Aufbau'; [cite: 47]
+    let isLoadingData = false; [cite: 47]
 
-    const daten = { "Aufbau": {}, "Freitag": {}, "Samstag": {}, "Sonntag": {}, "Abbau": {} };
+    const daten = { "Aufbau": {}, "Freitag": {}, "Samstag": {}, "Sonntag": {}, "Abbau": {} }; [cite: 48]
     const config = { 
       "Aufbau": { aufgaben: [], zeiten: [], farben: [], limits: {} }, 
       "Freitag": { aufgaben: [], zeiten: [], farben: [], limits: {} }, 
       "Samstag": { aufgaben: [], zeiten: [], farben: [], limits: {} }, 
       "Sonntag": { aufgaben: [], zeiten: [], farben: [], limits: {} }, 
       "Abbau": { aufgaben: [], zeiten: [], farben: [], limits: {} }
-    };
+    }; [cite: 49]
 
     async function fetchBaserow(method, url, body = null) {
-      const headers = { 'Authorization': `Token ${BASEROW_API_TOKEN}`, 'Content-Type': 'application/json' };
-      const options = { method, headers };
-      if (body) options.body = JSON.stringify(body);
-      const response = await fetch(url, options);
-      if (!response.ok) throw new Error(`API Fehler: ${response.status}`);
-      return response.status === 204 ? {success:true} : await response.json();
+      const headers = { 'Authorization': `Token ${BASEROW_API_TOKEN}`, 'Content-Type': 'application/json' }; [cite: 50]
+      const options = { method, headers }; [cite: 50]
+      if (body) options.body = JSON.stringify(body); [cite: 51]
+      const response = await fetch(url, options); [cite: 51]
+      if (!response.ok) throw new Error(`API Fehler: ${response.status}`); [cite: 52]
+      return response.status === 204 ? {success:true} : await response.json(); [cite: 53, 54]
     }
 
     async function ladeDaten() {
-      if (isLoadingData) return;
-      isLoadingData = true;
+      if (isLoadingData) return; [cite: 55]
+      isLoadingData = true; [cite: 56]
       try {
         let allRows = [];
-        let nextUrl = `${BASEROW_SERVER_URL}/api/database/rows/table/${EINTRAEGE_TABLE_ID}/?user_field_names=true&size=100`;
+        let nextUrl = `${BASEROW_SERVER_URL}/api/database/rows/table/${EINTRAEGE_TABLE_ID}/?user_field_names=true&size=100`; [cite: 58]
         
         while(nextUrl) {
-          const pageData = await fetchBaserow('GET', nextUrl);
-          allRows = allRows.concat(pageData.results);
-          nextUrl = pageData.next ? pageData.next.replace('http://', 'https://') : null;
+          const pageData = await fetchBaserow('GET', nextUrl); [cite: 58]
+          allRows = allRows.concat(pageData.results); [cite: 59]
+          nextUrl = pageData.next ? pageData.next.replace('http://', 'https://') : null; [cite: 60]
         }
 
-        for (const t in daten) daten[t] = {};
+        for (const t in daten) daten[t] = {}; [cite: 64]
         for (const row of allRows) {
-          if (!row.Tag || !row.Zeit || !row.Aufgabe || !row.Name) continue;
-          const t = String(row.Tag).trim();
-          const key = `${String(row.Zeit).trim()}||${String(row.Aufgabe).trim()}`;
+          if (!row.Tag || !row.Zeit || !row.Aufgabe || !row.Name) continue; [cite: 64]
+          const t = String(row.Tag).trim(); [cite: 65]
+          const key = `${String(row.Zeit).trim()}||${String(row.Aufgabe).trim()}`; [cite: 66]
           if (daten[t]) {
-            if (!daten[t][key]) daten[t][key] = [];
-            daten[t][key].push(String(row.Name).trim());
+            if (!daten[t][key]) daten[t][key] = []; [cite: 66]
+            daten[t][key].push(String(row.Name).trim()); [cite: 66]
           }
         }
-        await ladeKonfiguration();
-        zeigeTag(aktuellerTag);
+        await ladeKonfiguration(); [cite: 67]
+        zeigeTag(aktuellerTag); [cite: 67]
       } catch (e) {
-        console.error("Ladefehler:", e);
+        console.error("Ladefehler:", e); [cite: 68]
       } finally {
-        isLoadingData = false;
+        isLoadingData = false; [cite: 69]
       }
     }
 
     async function ladeKonfiguration() {
-      const url = `${BASEROW_SERVER_URL}/api/database/rows/table/${KONFIG_TABLE_ID}/?user_field_names=true`;
+      const url = `${BASEROW_SERVER_URL}/api/database/rows/table/${KONFIG_TABLE_ID}/?user_field_names=true`; [cite: 70]
       try {
-        const data = await fetchBaserow('GET', url);
+        const data = await fetchBaserow('GET', url); [cite: 72]
         data.results.forEach(row => {
           if (row.Tag && row.Konfig && config[row.Tag]) {
-            config[row.Tag] = JSON.parse(row.Konfig);
+            config[row.Tag] = JSON.parse(row.Konfig); [cite: 73]
           }
         });
-      } catch (e) { console.error("Konfig-Fehler:", e); }
+      } catch (e) { console.error("Konfig-Fehler:", e); [cite: 75] }
     }
 
     function zeigeTag(t) {
-      aktuellerTag = t;
-      const conf = config[t];
-      const container = document.getElementById('schichtplan');
+      aktuellerTag = t; [cite: 81]
+      const conf = config[t]; [cite: 81]
+      const container = document.getElementById('schichtplan'); [cite: 82]
       
       if (!conf || !conf.aufgaben?.length) {
-        container.innerHTML = `<h2>${t} 11.06. - 15.06.</h2><p style="text-align:center;">Noch keine Aufgaben für diesen Tag konfiguriert.<br>Nutze den Admin-Login zum Einrichten.</p>`;
+        container.innerHTML = `<h2>${t}</h2><p style="text-align:center;">Für diesen Tag wurden noch keine Aufgaben hinterlegt.</p>`; [cite: 82]
         return;
       }
 
-      let html = `<h2>${t}</h2><div class="scroll-container"><table><thead><tr><th>Aufgabe</th>`;
-      conf.zeiten.forEach(z => html += `<th>${z}</th>`);
-      html += `</tr></thead><tbody>`;
+      let html = `<h2>${t}</h2><div class="scroll-container"><table><thead><tr><th>Aufgabe</th>`; [cite: 83, 84]
+      conf.zeiten.forEach(z => html += `<th>${z}</th>`); [cite: 84]
+      html += `</tr></thead><tbody>`; [cite: 84]
 
       conf.aufgaben.forEach((a, idx) => {
-        html += `<tr><th style="background:${conf.farben[idx]}">${a}</th>`;
+        html += `<tr><th style="background:${conf.farben[idx]}">${a}</th>`; [cite: 85]
         conf.zeiten.forEach(z => {
-          const key = `${z}||${a}`;
-          const helfer = daten[t][key] || [];
-          const max = conf.limits[key] || 3;
-          const istVoll = helfer.length >= max;
+          const key = `${z}||${a}`; [cite: 86]
+          const helfer = daten[t][key] || []; [cite: 86]
+          const max = conf.limits[key] || 3; [cite: 86]
+          const istVoll = helfer.length >= max; [cite: 89]
 
-          html += `<td><strong>${helfer.length}/${max}</strong><ul class="helfer-list">`;
-          helfer.forEach(n => html += `<li>${n}</li>`);
+          html += `<td><strong>${helfer.length}/${max}</strong><ul class="helfer-list">`; [cite: 90]
+          helfer.forEach(n => html += `<li>${n}</li>`); [cite: 90]
           html += `</ul>`;
           
           if (istVoll) {
-            html += `<div class="schicht-voll">✔️ Voll</div>`;
+            html += `<div class="schicht-voll">✔️ Voll</div>`; [cite: 89]
           } else {
             html += `<div class="input-gruppe">
               <input id="name-${key}" placeholder="Name">
               <button onclick="eintragen('${key}')">✔️</button>
-            </div>`;
+            </div>`; [cite: 87, 88]
           }
           html += `</td>`;
         });
@@ -223,97 +186,25 @@
 
       html += `</tbody></table></div>`;
       container.innerHTML = html;
-      if(admin) zeigeDebug();
     }
 
     async function eintragen(key) {
-      const input = document.getElementById('name-' + key);
-      const name = input.value.trim();
-      if (!name) return;
-      const [zeit, aufgabe] = key.split('||');
+      const input = document.getElementById('name-' + key); [cite: 91]
+      const name = input.value.trim(); [cite: 91]
+      if (!name) return; [cite: 92]
+      const [zeit, aufgabe] = key.split('||'); [cite: 92]
       
       try {
         await fetchBaserow('POST', `${BASEROW_SERVER_URL}/api/database/rows/table/${EINTRAEGE_TABLE_ID}/?user_field_names=true`, {
           "Tag": aktuellerTag, "Zeit": zeit, "Aufgabe": aufgabe, "Name": name
-        });
-        input.value = "";
-        await ladeDaten();
-      } catch (e) { alert("Fehler beim Speichern!"); }
+        }); [cite: 94, 95]
+        input.value = ""; [cite: 95]
+        await ladeDaten(); [cite: 95]
+      } catch (e) { alert("Fehler beim Speichern!"); [cite: 96] }
     }
 
-    function zeigeLogin() { document.getElementById('loginFeld').style.display = 'block'; }
-    function adminLogin() {
-      if (document.getElementById('adminPasswort').value === 'admin') {
-        admin = true;
-        document.getElementById('adminBereich').style.display = 'block';
-        document.getElementById('loginFeld').style.display = 'none';
-        zeigeTag(aktuellerTag);
-      } else { alert("Falsch!"); }
-    }
-
-    async function speichereKonfiguration() {
-      const getUrl = `${BASEROW_SERVER_URL}/api/database/rows/table/${KONFIG_TABLE_ID}/?user_field_names=true`;
-      const data = await fetchBaserow('GET', getUrl);
-      const existing = data.results.find(r => r.Tag === aktuellerTag);
-      const payload = { "Konfig": JSON.stringify(config[aktuellerTag]) };
-
-      if (existing) {
-        await fetchBaserow('PATCH', `${BASEROW_SERVER_URL}/api/database/rows/table/${KONFIG_TABLE_ID}/${existing.id}/?user_field_names=true`, payload);
-      } else {
-        await fetchBaserow('POST', `${BASEROW_SERVER_URL}/api/database/rows/table/${KONFIG_TABLE_ID}/?user_field_names=true`, { "Tag": aktuellerTag, ...payload });
-      }
-      await ladeDaten();
-    }
-
-    async function aufgabeHinzufuegen() {
-      const a = document.getElementById('aufgabe').value.trim();
-      const f = document.getElementById('farbe').value;
-      if (a) { 
-        config[aktuellerTag].aufgaben.push(a); 
-        config[aktuellerTag].farben.push(f); 
-        await speichereKonfiguration(); 
-        document.getElementById('aufgabe').value = "";
-      }
-    }
-
-    async function zeitHinzufuegen() {
-      const z = document.getElementById('zeit').value.trim();
-      if (z) { 
-        config[aktuellerTag].zeiten.push(z); 
-        await speichereKonfiguration(); 
-        document.getElementById('zeit').value = "";
-      }
-    }
-
-    async function zeitLoeschen() {
-      config[aktuellerTag].zeiten.pop();
-      await speichereKonfiguration();
-    }
-
-    async function loeschen() {
-      config[aktuellerTag].aufgaben.pop();
-      config[aktuellerTag].farben.pop();
-      await speichereKonfiguration();
-    }
-
-    async function maxHinzufuegen() {
-      const z = document.getElementById('maxZeit').value.trim();
-      const a = document.getElementById('maxAufgabe').value.trim();
-      const m = parseInt(document.getElementById('max').value);
-      if (z && a && !isNaN(m)) {
-        config[aktuellerTag].limits[`${z}||${a}`] = m;
-        await speichereKonfiguration();
-      }
-    }
-
-    function zeigeVerantwortliche() { document.getElementById('verantwortlicheBox').style.display = 'block'; }
-    function verantwortlicheSchliessen() { document.getElementById('verantwortlicheBox').style.display = 'none'; }
-
-    function zeigeDebug() {
-      const db = document.getElementById('debug-block');
-      db.style.display = 'block';
-      db.textContent = JSON.stringify(config[aktuellerTag], null, 2);
-    }
+    function zeigeVerantwortliche() { document.getElementById('verantwortlicheBox').style.display = 'block'; } [cite: 79]
+    function verantwortlicheSchliessen() { document.getElementById('verantwortlicheBox').style.display = 'none'; } [cite: 80]
 
     ladeDaten();
   </script>
