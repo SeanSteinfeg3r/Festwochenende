@@ -75,13 +75,14 @@
   </div>
 
   <script>
-    const BASEROW_API_TOKEN = "SvWXJIjz6eyKd1Z7REyRpCtnuCqJYPrQ"; [cite: 45]
-    const BASEROW_SERVER_URL = "https://api.baserow.io"; [cite: 45]
+    // Konfiguration [cite: 45, 46]
+    const BASEROW_API_TOKEN = "SvWXJIjz6eyKd1Z7REyRpCtnuCqJYPrQ"; 
+    const BASEROW_SERVER_URL = "https://api.baserow.io";
     const EINTRAEGE_TABLE_ID = 991494;
     const KONFIG_TABLE_ID    = 991493;
 
     let aktuellerTag = 'Aufbau'; [cite: 47]
-    let isLoadingData = false; [cite: 47]
+    let isLoadingData = false;
 
     const daten = { "Aufbau": {}, "Freitag": {}, "Samstag": {}, "Sonntag": {}, "Abbau": {} }; [cite: 48]
     const config = { 
@@ -94,16 +95,16 @@
 
     async function fetchBaserow(method, url, body = null) {
       const headers = { 'Authorization': `Token ${BASEROW_API_TOKEN}`, 'Content-Type': 'application/json' }; [cite: 50]
-      const options = { method, headers }; [cite: 50]
+      const options = { method, headers };
       if (body) options.body = JSON.stringify(body); [cite: 51]
-      const response = await fetch(url, options); [cite: 51]
+      const response = await fetch(url, options);
       if (!response.ok) throw new Error(`API Fehler: ${response.status}`); [cite: 52]
       return response.status === 204 ? {success:true} : await response.json(); [cite: 53, 54]
     }
 
     async function ladeDaten() {
       if (isLoadingData) return; [cite: 55]
-      isLoadingData = true; [cite: 56]
+      isLoadingData = true;
       try {
         let allRows = [];
         let nextUrl = `${BASEROW_SERVER_URL}/api/database/rows/table/${EINTRAEGE_TABLE_ID}/?user_field_names=true&size=100`; [cite: 58]
@@ -127,7 +128,7 @@
         await ladeKonfiguration(); [cite: 67]
         zeigeTag(aktuellerTag); [cite: 67]
       } catch (e) {
-        console.error("Ladefehler:", e); [cite: 68]
+        console.error("Ladefehler Daten:", e); [cite: 68]
       } finally {
         isLoadingData = false; [cite: 69]
       }
@@ -138,11 +139,18 @@
       try {
         const data = await fetchBaserow('GET', url); [cite: 72]
         data.results.forEach(row => {
-          if (row.Tag && row.Konfig && config[row.Tag]) {
-            config[row.Tag] = JSON.parse(row.Konfig); [cite: 73]
+          const tagName = String(row.Tag).trim(); [cite: 73]
+          if (tagName && row.Konfig && config[tagName]) {
+            try {
+              config[tagName] = JSON.parse(row.Konfig); [cite: 73]
+            } catch (jsonErr) {
+              console.error("JSON Syntaxfehler in Baserow Zelle:", tagName, jsonErr);
+            }
           }
         });
-      } catch (e) { console.error("Konfig-Fehler:", e); [cite: 75] }
+      } catch (e) { 
+        console.error("Fehler beim Abruf der Konfiguration:", e); [cite: 75]
+      }
     }
 
     function zeigeTag(t) {
@@ -150,7 +158,7 @@
       const conf = config[t]; [cite: 81]
       const container = document.getElementById('schichtplan'); [cite: 82]
       
-      if (!conf || !conf.aufgaben?.length) {
+      if (!conf || !conf.aufgaben || conf.aufgaben.length === 0) {
         container.innerHTML = `<h2>${t}</h2><p style="text-align:center;">Für diesen Tag wurden noch keine Aufgaben hinterlegt.</p>`; [cite: 82]
         return;
       }
@@ -160,11 +168,12 @@
       html += `</tr></thead><tbody>`; [cite: 84]
 
       conf.aufgaben.forEach((a, idx) => {
-        html += `<tr><th style="background:${conf.farben[idx]}">${a}</th>`; [cite: 85]
+        const bg = (conf.farben && conf.farben[idx]) ? conf.farben[idx] : '#eee'; [cite: 85]
+        html += `<tr><th style="background:${bg}">${a}</th>`; [cite: 85]
         conf.zeiten.forEach(z => {
           const key = `${z}||${a}`; [cite: 86]
           const helfer = daten[t][key] || []; [cite: 86]
-          const max = conf.limits[key] || 3; [cite: 86]
+          const max = (conf.limits && conf.limits[key]) ? conf.limits[key] : 3; [cite: 86]
           const istVoll = helfer.length >= max; [cite: 89]
 
           html += `<td><strong>${helfer.length}/${max}</strong><ul class="helfer-list">`; [cite: 90]
@@ -200,12 +209,15 @@
         }); [cite: 94, 95]
         input.value = ""; [cite: 95]
         await ladeDaten(); [cite: 95]
-      } catch (e) { alert("Fehler beim Speichern!"); [cite: 96] }
+      } catch (e) { 
+        alert("Speichern fehlgeschlagen!"); [cite: 96] 
+      }
     }
 
     function zeigeVerantwortliche() { document.getElementById('verantwortlicheBox').style.display = 'block'; } [cite: 79]
     function verantwortlicheSchliessen() { document.getElementById('verantwortlicheBox').style.display = 'none'; } [cite: 80]
 
+    // Initialer Start
     ladeDaten();
   </script>
 </body>
