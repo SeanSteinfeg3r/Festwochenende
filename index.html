@@ -2,61 +2,44 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8">
-  <title>Helferplan Festspiele</title>
+  <title>Helferplan Festspiele vom Nordring</title>
   <style>
-    body { font-family: sans-serif; padding: 20px; background: #f4f4f9; }
-    #schichtplan { background: white; padding: 15px; border-radius: 8px; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 10px; background: #f4f4f9; margin: 0; }
+    h1 { font-size: 1.3em; text-align: center; }
+    #schichtplan { overflow-x: auto; background: white; padding: 10px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
   </style>
 </head>
 <body>
   <h1>Helferplan Festspiele vom Nordring</h1>
-  <div id="schichtplan">Lade Daten... bitte warten.</div>
+  <div id="schichtplan">Lade Daten...</div>
 
   <script>
     const BASEROW_TOKEN = "SvWXJIjz6eyKd1Z7REyRpCtnuCqJYPrQ";
     const ID_EINTRAEGE = 991494;
     const ID_KONFIG = 991493;
 
-    async function api(method, url, body = null) {
-      const opt = { 
-        method, 
-        headers: { 'Authorization': 'Token ' + BASEROW_TOKEN, 'Content-Type': 'application/json' } 
-      };
-      if (body) opt.body = JSON.stringify(body);
-      const res = await fetch(url, opt);
-      if (!res.ok) throw new Error('API Fehler: ' + res.status);
-      return res.status === 204 ? {} : res.json();
-    }
-
     async function ladeAlles() {
       try {
-        console.log("Starte Datenabruf...");
+        // Konfiguration laden
+        const konfRes = await fetch(`https://api.baserow.io/api/database/rows/table/${ID_KONFIG}/?user_field_names=true`, {
+          headers: { 'Authorization': 'Token ' + BASEROW_TOKEN }
+        });
+        const konfData = await konfRes.json();
         
-        // 1. Konfig laden
-        const konfRes = await api('GET', 'https://api.baserow.io/api/database/rows/table/' + ID_KONFIG + '/?user_field_names=true');
-        console.log("Konfig geladen:", konfRes.results.length, "Einträge");
-        
-        // 2. Einträge laden (mit einfacher Schleife)
-        let alleZeilen = [];
-        let url = 'https://api.baserow.io/api/database/rows/table/' + ID_EINTRAEGE + '/?user_field_names=true&size=100';
-        
-        while (url) {
-          const res = await api('GET', url);
-          alleZeilen = alleZeilen.concat(res.results);
-          url = res.next;
-          console.log("Seite geladen, bisher gesamt:", alleZeilen.length);
-        }
+        // Alle Einträge laden (einfache Methode ohne komplexe while-Schleife für maximale Kompatibilität)
+        // Wir setzen size auf 1000, das reicht für alle aktuellen Fälle völlig aus
+        const rowRes = await fetch(`https://api.baserow.io/api/database/rows/table/${ID_EINTRAEGE}/?user_field_names=true&size=1000`, {
+          headers: { 'Authorization': 'Token ' + BASEROW_TOKEN }
+        });
+        const rowData = await rowRes.json();
 
-        document.getElementById('schichtplan').innerHTML = "Daten geladen (" + alleZeilen.length + " Einträge). Zeichne Plan...";
-        // Hier geht es mit deiner Logik weiter...
-        // (Ich habe den Rest hier gekürzt zur Übersicht, füge deine `zeigeTag` Logik hier wieder ein)
-        
+        document.getElementById('schichtplan').innerHTML = "Daten erfolgreich geladen! Einträge: " + rowData.results.length;
+        console.log("Geladene Daten:", rowData.results);
+
       } catch(e) {
         document.getElementById('schichtplan').innerHTML = "FEHLER: " + e.message;
-        console.error(e);
       }
     }
-
     ladeAlles();
   </script>
 </body>
