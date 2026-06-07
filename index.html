@@ -33,7 +33,7 @@
     <button class="btn-purple" onclick="zeigeVerantwortliche()">Info</button>
   </div>
 
-  <div id="schichtplan"></div>
+  <div id="schichtplan">Lade Daten...</div>
 
   <script>
     const BASEROW_TOKEN = "SvWXJIjz6eyKd1Z7REyRpCtnuCqJYPrQ";
@@ -45,29 +45,28 @@
     let config = {};
 
     async function api(method, url, body = null) {
+      // Erzwinge https für alle Anfragen
+      const secureUrl = url.replace(/^http:\/\//i, 'https://');
       const opt = { method, headers: { 'Authorization': 'Token ' + BASEROW_TOKEN, 'Content-Type': 'application/json' } };
       if (body) opt.body = JSON.stringify(body);
-      const res = await fetch(url, opt);
+      const res = await fetch(secureUrl, opt);
       return res.status === 204 ? {} : res.json();
     }
 
     async function ladeAlles() {
       try {
-        // 1. Konfiguration laden
         const konf = await api('GET', 'https://api.baserow.io/api/database/rows/table/' + ID_KONFIG + '/?user_field_names=true');
         konf.results.forEach(r => { config[String(r.Tag).trim()] = JSON.parse(r.Konfig); });
 
-        // 2. Alle Einträge mit Pagination (Schleife) laden
         let alleZeilen = [];
         let url = 'https://api.baserow.io/api/database/rows/table/' + ID_EINTRAEGE + '/?user_field_names=true&size=100';
         
         while (url) {
           const res = await api('GET', url);
           alleZeilen = alleZeilen.concat(res.results);
-          url = res.next; // Springt zur nächsten Seite, falls vorhanden
+          url = res.next; 
         }
 
-        // 3. Daten zuordnen
         Object.keys(daten).forEach(key => daten[key] = {});
         alleZeilen.forEach(r => {
           const t = String(r.Tag).trim();
