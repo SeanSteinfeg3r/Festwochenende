@@ -45,34 +45,26 @@
     let config = {};
 
     async function api(method, url, body = null) {
-      // WICHTIG: Erzwinge HTTPS für jede URL, um Mixed Content Fehler zu vermeiden
+      // Erzwinge https für alle Anfragen
       const secureUrl = url.replace(/^http:\/\//i, 'https://');
-      const opt = { 
-        method, 
-        headers: { 'Authorization': 'Token ' + BASEROW_TOKEN, 'Content-Type': 'application/json' } 
-      };
+      const opt = { method, headers: { 'Authorization': 'Token ' + BASEROW_TOKEN, 'Content-Type': 'application/json' } };
       if (body) opt.body = JSON.stringify(body);
-      
       const res = await fetch(secureUrl, opt);
-      if (!res.ok) throw new Error("API Fehler " + res.status);
       return res.status === 204 ? {} : res.json();
     }
 
     async function ladeAlles() {
       try {
-        // Konfiguration laden
         const konf = await api('GET', 'https://api.baserow.io/api/database/rows/table/' + ID_KONFIG + '/?user_field_names=true');
         konf.results.forEach(r => { config[String(r.Tag).trim()] = JSON.parse(r.Konfig); });
 
-        // Alle Einträge mit Pagination laden
         let alleZeilen = [];
         let url = 'https://api.baserow.io/api/database/rows/table/' + ID_EINTRAEGE + '/?user_field_names=true&size=100';
         
         while (url) {
           const res = await api('GET', url);
           alleZeilen = alleZeilen.concat(res.results);
-          // Nächste Seite aus Baserow-Antwort nehmen und sicherstellen, dass sie https ist
-          url = res.next ? res.next.replace(/^http:\/\//i, 'https://') : null;
+          url = res.next; 
         }
 
         Object.keys(daten).forEach(key => daten[key] = {});
@@ -83,10 +75,7 @@
         });
         
         zeigeTag(aktuellerTag);
-      } catch(e) {
-        document.getElementById('schichtplan').innerHTML = "Fehler beim Laden: " + e.message;
-        console.error(e);
-      }
+      } catch(e) { console.error(e); }
     }
 
     function zeigeTag(t) {
